@@ -48,7 +48,7 @@ import (
 
 // Files represents a snapshot of files in a directory and its subdirectories.
 //
-// Keys represent the subpath of the files and their values are the contents of
+// Keys represent the subpath of a file and values hold the contents of
 // the respective file.
 type Files map[string][]byte
 
@@ -56,14 +56,13 @@ type Files map[string][]byte
 //
 // If n < 0, Read will scan all subdirectories.
 //
-// If n >= 0, Read will descend at most n directory levels below the given
-// directory.
+// If n >= 0, Read will descend at most n directory levels below directory dir.
 func Read(dir string, n int) (Files, error) {
 	osa := os.Current()
 	return ReadFS(osa, dir, n)
 }
 
-// ReadFS scans a fsys directory and returs its Files.
+// ReadFS scans a fsys directory dir and returs its Files.
 //
 // See Read().
 func ReadFS(fsys fs.FS, dir string, n int) (Files, error) {
@@ -100,7 +99,7 @@ func (f Files) readFS(fsys fs.FS, rootDir, subDir string, n int) error {
 // Write writes Files f into directory dir, creating new files and folders
 // accordingly.
 //
-// Already existing colliding file will be overwritten.
+// If a file already exists, its contents will be overwritten.
 func (f Files) Write(dir string) error {
 	for n, data := range f {
 		p := path.Join(dir, n)

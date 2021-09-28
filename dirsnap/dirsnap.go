@@ -53,22 +53,22 @@ import (
 
 // Dirs represents a nested snapshot of directory contents.
 //
-// Keys represent the names of the files and folders. Files are represented by a
+// Keys represent the name of a file or folder. Files are represented by a
 // nil value and subfolders by a nested Dirs instance.
 type Dirs map[string]Dirs
 
-// Read scans a directory and returs a tree of its files and folders.
+// Read scans a directory and returs a Dirs tree of its files and folders.
 //
 // If n < 0, Read will scan all subdirectories.
 //
-// If n >= 0, Read will descend at most n directory levels below the given
-// directory.
+// If n >= 0, Read will descend at most n directory levels below directory dir.
 func Read(dir string, n int) (Dirs, error) {
 	osa := os.Current()
 	return ReadFS(osa, dir, n)
 }
 
-// ReadFS scans a fsys directory and returs a tree of its files and folders.
+// ReadFS scans a fsys directory dir and returs a Dirs tree of its files and
+// folders.
 //
 // See Read().
 func ReadFS(fsys fs.FS, dir string, n int) (Dirs, error) {
@@ -96,22 +96,22 @@ func ReadFS(fsys fs.FS, dir string, n int) (Dirs, error) {
 	return t, nil
 }
 
-// Write writes Tree t into directory dir, creating new files and folders
+// Write writes Dirs d into directory dir, creating new files and folders
 // accordingly.
 //
-// Already existing colliding file or folder will not result in errors as long
-// as they are of the same type.
-func (t Dirs) Write(dir string) error {
-	for n, st := range t {
+// Collisions with already existing files or folders will not result in errors
+// as long as they are of the same type (directory or file respectively).
+func (d Dirs) Write(dir string) error {
+	for n, st := range d {
 		name := path.Join(dir, n)
 		if st == nil {
 			// Handle file.
-			if err := writeEmptyFile(name); !t.isEriteErrOk(err, name, false) {
+			if err := writeEmptyFile(name); !d.isWriteErrOk(err, name, false) {
 				return err
 			}
 		} else {
 			// Handle dir.
-			if err := os.Mkdir(name, 0700); !t.isEriteErrOk(err, name, true) {
+			if err := os.Mkdir(name, 0700); !d.isWriteErrOk(err, name, true) {
 				return err
 			}
 			if err := st.Write(name); err != nil {
@@ -122,7 +122,7 @@ func (t Dirs) Write(dir string) error {
 	return nil
 }
 
-func (t Dirs) isEriteErrOk(err error, name string, wantDir bool) bool {
+func (t Dirs) isWriteErrOk(err error, name string, wantDir bool) bool {
 	if !os.IsExist(err) {
 		return err == nil
 	}
